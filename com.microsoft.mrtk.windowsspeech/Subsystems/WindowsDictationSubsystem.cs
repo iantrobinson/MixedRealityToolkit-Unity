@@ -107,8 +107,13 @@ namespace Microsoft.MixedReality.Toolkit.Speech.Windows
                 initialSilenceTimeoutSeconds = config.InitialSilenceTimeoutSeconds;
                 autoSilenceTimeout = config.AutoSilenceTimeout;
             }
-#endif
 
+            public override void Stop()
+            {
+                base.Stop();
+                StopDictation();
+            }
+#endif
 
             /// <inheritdoc/>
             public override void Destroy()
@@ -167,7 +172,7 @@ namespace Microsoft.MixedReality.Toolkit.Speech.Windows
             public override void StopDictation()
             {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN || UNITY_WSA
-                if (dictationRecognizer != null)
+                if (dictationRecognizer != null && dictationRecognizer.Status == SpeechSystemStatus.Running)
                 {
                     dictationRecognizer.Stop();
                 }

@@ -44,10 +44,9 @@ namespace Microsoft.MixedReality.Toolkit.Input
             set => visibilitySettings = value;
         }
 
-        protected void OnEnable()
+        private void OnEnable()
         {
             rayInteractor.selectEntered.AddListener(LocateTargetHitPoint);
-            Application.onBeforeRender += UpdateReticle;
 
             // If no custom reticle root is specified, just use the interactor's transform.
             if (reticleRoot == null)
@@ -57,17 +56,20 @@ namespace Microsoft.MixedReality.Toolkit.Input
             UpdateReticle();
         }
 
-        protected void OnDisable()
+        private void OnDisable()
         {
             rayInteractor.selectEntered.RemoveListener(LocateTargetHitPoint);
-            Application.onBeforeRender -= UpdateReticle;
 
             ReticleSetActive(false);
         }
 
+        private void Update()
+        {
+            UpdateReticle();
+        }
+
         private static readonly ProfilerMarker UpdateReticlePerfMarker = new ProfilerMarker("[MRTK] MRTKRayReticleVisual.UpdateReticle");
 
-        [BeforeRenderOrder(XRInteractionUpdateOrder.k_BeforeRenderLineVisual)]
         private void UpdateReticle()
         {
             using (UpdateReticlePerfMarker.Auto())
@@ -94,20 +96,20 @@ namespace Microsoft.MixedReality.Toolkit.Input
                         // If we have a reticle, set its position and rotation.
                         if (reticleRoot != null)
                         {
-                            reticleRoot.transform.SetPositionAndRotation(reticlePosition, Quaternion.LookRotation(reticleNormal, Vector3.up));
+                            if (reticleNormal != Vector3.zero)
+                            {
+                                reticleRoot.transform.SetPositionAndRotation(reticlePosition, Quaternion.LookRotation(reticleNormal, Vector3.up));
+                            }
+                            else
+                            {
+                                reticleRoot.transform.position = reticlePosition;
+                            }
                         }
 
                         // If the reticle is an IVariableSelectReticle, have the reticle update based on selectedness
                         if (VariableReticle != null)
                         {
-                            if (rayInteractor is IVariableSelectInteractor variableSelectInteractor)
-                            {
-                                VariableReticle.UpdateVisuals(variableSelectInteractor.SelectProgress);
-                            }
-                            else
-                            {
-                                VariableReticle.UpdateVisuals(rayInteractor.isSelectActive ? 1 : 0);
-                            }
+                            VariableReticle.UpdateVisuals(new VariableReticleUpdateArgs(rayInteractor, reticlePosition, reticleNormal));
                         }
                     }
                     else

@@ -15,7 +15,6 @@ Material:
   - _DISABLE_ALBEDO_MAP
   - _IRIDESCENCE
   - _ROUND_CORNERS
-  - _USE_WORLD_SCALE
   m_InvalidKeywords:
   - _IGNORE_Z_SCALE
   m_LightmapFlags: 4
