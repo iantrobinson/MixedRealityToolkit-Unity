@@ -1,22 +1,28 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Microsoft.MixedReality.Toolkit.Input;
+using Microsoft.MixedReality.Toolkit.Subsystems;
+using UnityEngine.XR;
+using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Microsoft.MixedReality.Toolkit.Examples
 {
-    using Input;
-    using Subsystems;
-    using UnityEngine.XR;
-    using UnityEngine.XR.Interaction.Toolkit;
-
     /// <summary>
-    /// Specifies the allowed surface orientations to place GameObjects with attached <see cref="MoveObjectByEyeGaze"/> on.
+    /// Specifies whether the <see cref="GameObject"/> moves on horizontal or vertical surfaces.
     /// </summary>
     internal enum PlacementSurfaces
     {
+        /// <summary>
+        /// The <see cref="GameObject"/> can moves on horizontal surfaces.
+        /// </summary>
         Horizontal,
+
+        /// <summary>
+        /// The <see cref="GameObject"/> can moves on vertical surfaces.
+        /// </summary>
         Vertical
     }
 
@@ -49,10 +55,9 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         [SerializeField]
         private bool handInputEnabled = true;
 
-        [Tooltip(
-            "To control whether the hand motion is used 1:1 to move a target or to use different gains to allow for smaller hand motions.")]
+        [Tooltip("To control whether the hand motion is used 1:1 to move a target or to use different gains to allow for smaller hand motions.")]
         [SerializeField]
-        private float handmapping = 1f;
+        private float handMapping = 1f;
 
         [Tooltip("Minimal amount of hand movement to trigger target repositioning.")]
         [SerializeField]
@@ -130,7 +135,7 @@ namespace Microsoft.MixedReality.Toolkit.Examples
 
         private bool manualTargetManipulation = false;
 
-        private Vector3 initalGazeDirection;
+        private Vector3 initialGazeDirection;
         private static bool isManipulatingUsingHands = false;
         private static bool isManipulatingUsingVoice = false;
         private Vector3 handPositionAbsolute;
@@ -142,8 +147,8 @@ namespace Microsoft.MixedReality.Toolkit.Examples
 
         private Ray? headPreviousRay;
         private float headDeltaDirectionThreshold = 0.05f;
-        private float headSmoothf = 0.1f;
-        private float headDeltaDirectionf = 0f;
+        private float headSmooth = 0.1f;
+        private float headDeltaDirection = 0f;
 
         private int ConstraintX => freezeX ? 0 : 1;
         private int ConstraintY => freezeY ? 0 : 1;
@@ -159,6 +164,7 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         private readonly float minDiffAngleForVerticalPlacement = 50f;
         #endregion
 
+        /// <inheritdoc />
         public override float GetSelectionProgress()
         {
             return objectIsGrabbed ? 1f :  base.GetSelectionProgress();
@@ -448,7 +454,7 @@ namespace Microsoft.MixedReality.Toolkit.Examples
             {
                 previewGameObject = Instantiate(gameObject);
                 previewGameObject.GetComponent<Collider>().enabled = false;
-                EyeTrackingUtilities.GameObject_ChangeTransparency(previewGameObject, transparencyPreview);
+                EyeTrackingUtilities.SetGameObjectTransparency(previewGameObject, transparencyPreview);
                 placePreviewAtHitPoint = false;
             }
 
@@ -476,17 +482,17 @@ namespace Microsoft.MixedReality.Toolkit.Examples
             if (!objectIsGrabbed && isHovered)
             {
                 objectIsGrabbed = true;
-                EyeTrackingUtilities.GameObject_ChangeTransparency(gameObject, transparencyInTransition, ref originalTransparency);
+                EyeTrackingUtilities.SetGameObjectTransparency(gameObject, transparencyInTransition, ref originalTransparency);
                 initialHandPosition = handPositionAbsolute;
-                initalGazeDirection = new Vector3(Camera.main.transform.forward.x, Camera.main.transform.forward.y, Camera.main.transform.forward.z);
+                initialGazeDirection = new Vector3(Camera.main.transform.forward.x, Camera.main.transform.forward.y, Camera.main.transform.forward.z);
 
-                if (TryGetComponent<Rigidbody>(out var rbody))
+                if (TryGetComponent<Rigidbody>(out var rigidbody))
                 {
-                    originalUseGravity = rbody.useGravity;
-                    originalDrag = rbody.drag;
+                    originalUseGravity = rigidbody.useGravity;
+                    originalDrag = rigidbody.drag;
 
-                    rbody.useGravity = false;
-                    rbody.drag = float.PositiveInfinity;
+                    rigidbody.useGravity = false;
+                    rigidbody.drag = float.PositiveInfinity;
                 }
             }
         }
@@ -511,11 +517,11 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                 objectIsGrabbed = false;
                 DeactivatePreview();
 
-                EyeTrackingUtilities.GameObject_ChangeTransparency(gameObject, originalTransparency);
-                if (TryGetComponent<Rigidbody>(out var rbody))
+                EyeTrackingUtilities.SetGameObjectTransparency(gameObject, originalTransparency);
+                if (TryGetComponent<Rigidbody>(out var rigidbody))
                 {
-                    rbody.useGravity = originalUseGravity;
-                    rbody.drag = originalDrag;
+                    rigidbody.useGravity = originalUseGravity;
+                    rigidbody.drag = originalDrag;
                 }
 
                 onDrop.Invoke();
@@ -536,20 +542,20 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         /// </summary>
         private float Angle_InitialGazeToCurrGazeDir()
         {
-            return Vector3.Angle(initalGazeDirection, Camera.main.transform.forward);
+            return Vector3.Angle(initialGazeDirection, Camera.main.transform.forward);
         }
 
         /// <summary>
-        /// Compute angle between target center ( OR original targeting location??? ) and current targeting direction
+        /// Compute angle between target center and current targeting direction
         /// </summary>
-        private float Angle_ToCurrHitTarget(GameObject gobj)
+        private float Angle_ToCurrHitTarget(GameObject target)
         {
             if (gazeInteractor.PreciseHitResult.targetInteractable != null)
             {
                 // Target is currently hit
-                if (gazeInteractor.PreciseHitResult.targetInteractable.transform.gameObject == gobj)
+                if (gazeInteractor.PreciseHitResult.targetInteractable.transform.gameObject == target)
                 {
-                    initalGazeDirection = new Vector3(Camera.main.transform.forward.x, Camera.main.transform.forward.y, Camera.main.transform.forward.z);
+                    initialGazeDirection = new Vector3(Camera.main.transform.forward.x, Camera.main.transform.forward.y, Camera.main.transform.forward.z);
                     return 0.0f;
                 }
 
@@ -574,9 +580,9 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                 float deltaDir = Vector3.Distance(headPreviousRay.Value.direction, forward);
                 if (deltaPos != 0f && deltaDir != 0f)
                 {
-                    headDeltaDirectionf = deltaDir * headSmoothf + headDeltaDirectionf * (1f - headSmoothf);
+                    headDeltaDirection = deltaDir * headSmooth + headDeltaDirection * (1f - headSmooth);
 
-                    headIsInMotion = headDeltaDirectionf > headDeltaDirectionThreshold;
+                    headIsInMotion = headDeltaDirection > headDeltaDirectionThreshold;
                 }
             }
 
@@ -612,13 +618,13 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                         hitPosition.y += gameObject.transform.localScale.y * 0.5f;
                     }
 
-                    Vector3 objp = gameObject.transform.position;
+                    Vector3 objectPosition = gameObject.transform.position;
 
                     // Constrain in y-direction
                     gameObject.transform.position = new Vector3(
-                        (((ConstraintX + 1) % 2) * objp.x) + (ConstraintX * hitPosition.x),
-                        (((ConstraintY + 1) % 2) * objp.y) + (ConstraintY * hitPosition.y),
-                        (((ConstraintZ + 1) % 2) * objp.z) + (ConstraintZ * hitPosition.z));
+                        (((ConstraintX + 1) % 2) * objectPosition.x) + (ConstraintX * hitPosition.x),
+                        (((ConstraintY + 1) % 2) * objectPosition.y) + (ConstraintY * hitPosition.y),
+                        (((ConstraintZ + 1) % 2) * objectPosition.z) + (ConstraintZ * hitPosition.z));
 
                     ConstrainMovement();
 
@@ -629,7 +635,7 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                     // Continuous manual target movement
                     Vector3 oldPos = gameObject.transform.position;
                     Vector3 d = new Vector3(-delta.x * ConstraintX, -delta.y * ConstraintY, -delta.z * ConstraintZ);
-                    gameObject.transform.position = oldPos + d * handmapping;
+                    gameObject.transform.position = oldPos + d * handMapping;
 
                     ConstrainMovement();
                 }
@@ -670,13 +676,13 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                         destination.y += gameObject.transform.localScale.y * 0.5f;
                     }
 
-                    Vector3 objp = gameObject.transform.position;
+                    Vector3 objectPosition = gameObject.transform.position;
 
                     // Constrain movement
                     gameObject.transform.position = new Vector3(
-                        ((ConstraintX + 1) % 2 * objp.x) + (ConstraintX * destination.x),
-                        ((ConstraintY + 1) % 2 * objp.y) + (ConstraintY * destination.y),
-                        ((ConstraintZ + 1) % 2 * objp.z) + (ConstraintZ * destination.z));
+                        ((ConstraintX + 1) % 2 * objectPosition.x) + (ConstraintX * destination.x),
+                        ((ConstraintY + 1) % 2 * objectPosition.y) + (ConstraintY * destination.y),
+                        ((ConstraintZ + 1) % 2 * objectPosition.z) + (ConstraintZ * destination.z));
 
                     initialHandPosition = handPositionAbsolute;
                 }

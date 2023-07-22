@@ -10,7 +10,6 @@ namespace Microsoft.MixedReality.Toolkit.Examples
 {
     /// <summary>
     /// Example of how to use interactors to create a heatmap of eye tracking data.
-    /// Uses MRTKBaseInteractable, but not StatefulInteractable.
     /// </summary>
     [AddComponentMenu("MRTK/Examples/DrawOnTexture")]
     [RequireComponent(typeof(Renderer))]
@@ -93,7 +92,7 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         }
 
         /// <summary>
-        /// Updates the heat map with a hit at <param name="hitPosition"></param>.
+        /// Updates the heat map with a hit at <paramref name="hitPosition"/>.
         /// </summary>
         /// <param name="hitPosition">The hit position in world co-ordinates.</param>
         public void DrawAtThisHitPos(Vector3 hitPosition)

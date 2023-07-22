@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Collections;
-using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -48,14 +47,17 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         }
 
         /// <summary>
-        /// Change the color of game object "gameObject".
+        /// Change the material color of the given <see cref="GameObject"/>.
         /// </summary>
-        /// <param name="originalColor">Enter "null" in case you're passing the original object and want to save the original color.</param>
-        public static void GameObject_ChangeColor(GameObject gobj, Color newColor, ref Color? originalColor, bool onlyApplyToRootObj)
+        /// <param name="target">The object whose material colors will be changed.</param>
+        /// <param name="newColor">The new color to apply to the object's materials.</param> 
+        /// <param name="originalColor">Obtain the original color of the first material's <see cref="Material.color"/>. This must be <see langword="null"/> to obtain this original color.</param>
+        /// <param name="onlyApplyToRoot"><see langword="true"/> to only change materials on the root <see cref="GameObject"/>, and <see langword="false"/> to change children's materials too.</param>
+        public static void SetGameObjectColor(GameObject target, Color newColor, ref Color? originalColor, bool onlyApplyToRoot)
         {
             try
             {
-                Renderer[] renderers = gobj.GetComponents<Renderer>();
+                Renderer[] renderers = target.GetComponents<Renderer>();
                 for (int i = 0; i < renderers.Length; i++)
                 {
                     Material[] mats = renderers[i].materials;
@@ -64,15 +66,17 @@ namespace Microsoft.MixedReality.Toolkit.Examples
                         Color c = mat.color;
 
                         if (!originalColor.HasValue)
+                        {
                             originalColor = c;
+                        }
 
                         mat.color = newColor;
                     }
                 }
 
-                if (!onlyApplyToRootObj)
+                if (!onlyApplyToRoot)
                 {
-                    renderers = gobj.GetComponentsInChildren<Renderer>();
+                    renderers = target.GetComponentsInChildren<Renderer>();
                     for (int i = 0; i < renderers.Length; i++)
                     {
                         Material[] mats = renderers[i].materials;
@@ -90,29 +94,30 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         }
 
         /// <summary>
-        /// Change the transparency of game object "gameObject" with a transparency value between 0 and 1;
+        /// Change the transparency of a <see cref="GameObject"/> with a transparency value between 0 and 1.
         /// </summary>
-        public static void GameObject_ChangeTransparency(GameObject gameObject, float newTransparency)
+        public static void SetGameObjectTransparency(GameObject target, float newTransparency)
         {
             float originalTransparency = 0; // just a dummy variable to reuse the following function
-            GameObject_ChangeTransparency(gameObject, newTransparency, ref originalTransparency);
+            SetGameObjectTransparency(target, newTransparency, ref originalTransparency);
         }
 
         /// <summary>
-        /// Change the transparency of game object "gameObject" with a transparency value between 0 and 255 with the option to 
+        /// Change the transparency of a <see cref="GameObject"/> with a transparency value between 0 and 255 with the option to 
         /// receive the original transparency value back.
         /// </summary>
+        /// <param name="target">The function will query for <see cref="Renderer"/> instances on this target object, and change the transparency on the found <see cref="Renderer"/> instances.</param>
         /// <param name="transparency">Expected values range from 0 (fully transparent) to 1 (fully opaque).</param>
         /// <param name="originalTransparency">Input "-1" if you don't know the original transparency yet.</param>
-        public static void GameObject_ChangeTransparency(GameObject gameObject, float transparency, ref float originalTransparency)
+        public static void SetGameObjectTransparency(GameObject target, float transparency, ref float originalTransparency)
         {
             try
             {
                 // Go through renderers in main object
-                Renderers_ChangeTransparency(gameObject.GetComponents<Renderer>(), transparency, ref originalTransparency);
+                SetRenderersTransparency(target.GetComponents<Renderer>(), transparency, ref originalTransparency);
 
                 // Go through renderers in children objects
-                Renderers_ChangeTransparency(gameObject.GetComponentsInChildren<Renderer>(), transparency, ref originalTransparency);
+                SetRenderersTransparency(target.GetComponentsInChildren<Renderer>(), transparency, ref originalTransparency);
             }
             catch (System.Exception)
             {
@@ -121,12 +126,12 @@ namespace Microsoft.MixedReality.Toolkit.Examples
         }
 
         /// <summary>
-        /// Change the transparency of a given array of renderers to a given transparency value between 0 and 255; 
+        /// Change the transparency of a given array of renderers to a given transparency value between 0 and 255.
         /// </summary>
         /// <param name="renderers">Array of renderers to apply a new transparency value to.</param>
         /// <param name="transparency">Value between 0 and 255.</param>
         /// <param name="originalTransparency">Option to return the original transparency value.</param>
-        private static void Renderers_ChangeTransparency(Renderer[] renderers, float transparency, ref float originalTransparency)
+        private static void SetRenderersTransparency(Renderer[] renderers, float transparency, ref float originalTransparency)
         {
             for (int i = 0; i < renderers.Length; i++)
             {

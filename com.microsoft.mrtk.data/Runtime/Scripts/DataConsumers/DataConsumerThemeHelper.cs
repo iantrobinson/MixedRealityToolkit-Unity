@@ -10,12 +10,15 @@ using UnityEngine;
 namespace Microsoft.MixedReality.Toolkit.Data
 {
     /// <summary>
-    /// A theme data consumer used to help another primary data consumer derived from DataConsumeThemableBase<T>
+    /// A theme data consumer used to help another primary data consumer derived from <see cref="DataConsumerThemableBase{T}"/>
     /// that is designed to manage both dynamically bound data received from a data-centric DataSource, and
-    /// then theme that dynamic data. As an example, a numeric status can be used to look up an appropriate
+    /// then theme that dynamic data. 
+    /// </summary>
+    /// <remarks>
+    /// As an example, a numeric status can be used to look up an appropriate
     /// status icon for the current status.  That icon can then be further themed to adopt the desired, branding or
     /// other specific look and feel appropriate for the currently active theme.
-    /// </summary>
+    /// </remarks>
     [AddComponentMenu("MRTK/Data Binding/Consumers/Data Consumer Theme Helper")]
     public class DataConsumerThemeHelper : DataConsumerGOBase
     {
@@ -105,18 +108,34 @@ namespace Microsoft.MixedReality.Toolkit.Data
         /// </summary>
         /// <remarks>
         /// The object can be any of a number of types and loaded accordingly:
-        ///
-        /// int                     Use as index to select Nth entry in ValueToObjectInfo
-        /// T                       Directly use the value to replace the managed variable of that type
-        /// "resource://<<path>>"   Use path to load a Unity Resource
-        /// "file://<<path>>"       Use path to load a streaming asset
-        /// other string            Use string value to find entry by value in ValueToObjectInfo
-        ///
+        /// 
+        /// <list type="bullet">
+        ///     <item>
+        ///         <term>int</term>
+        ///         <description>Use as index to select Nth entry in ValueToObjectInfo.</description>         
+        ///     </item>
+        ///     <item>
+        ///         <term>T</term>
+        ///         <description>Directly use the value to replace the managed variable of that type.</description>         
+        ///     </item>
+        ///     <item>
+        ///         <term>"resource://[path]"</term>
+        ///         <description>Use path to load a Unity Resource.</description>         
+        ///     </item>
+        ///     <item>
+        ///         <term>"file://[path]"</term>
+        ///         <description>Use path to load a streaming asset.</description>         
+        ///     </item>
+        ///     <item>
+        ///         <term>other string</term>
+        ///         <description>Use string value to find entry by value in ValueToObjectInfo.</description>         
+        ///     </item>
+        /// </list>
         /// </remarks>
         /// <param name="dataSource">Which data source called this method.</param>
         /// <param name="resolvedKeyPath">Fully resolved keypath for datum that changed.</param>
         /// <param name="localKeyPath">Local keypath for the datum that changed.</param>
-        /// <param name="inDataValue">The current value of the datum</param>
+        /// <param name="inValue">The current value of the data.</param>
         /// <param name="dataChangeType">The type of change that has occurred.</param>
         protected override void ProcessDataChanged(IDataSource dataSource, string resolvedKeyPath, string localKeyPath, object inValue, DataChangeType dataChangeType)
         {
